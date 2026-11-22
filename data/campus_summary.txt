@@ -1,0 +1,55 @@
+=========================================================================================
+            GOA UNIVERSITY CAMPUS RIDESHARE & CARPOOL MATCHER AUDIT REPORT              
+                Problem Solving and Programming Laboratory (CSA5003 PSPL)                
+                       Evaluation Date: November 2026 • Team 6 (CS9)                     
+=========================================================================================
+
+1. EXECUTIVE FLEET & RECURSIVE ANALYTICS SUMMARY (Lab 7 & Lab 8)
+-----------------------------------------------------------------------------------------
+  Active Campus Rides      : 8
+  Total Bookings Recorded  : 3
+  Registered Campus Users  : 4 (@unigoa.ac.in verified)
+  Available Carpool Seats  : 25 (via recursive_sum_available_seats)
+  Open Fleet Fare Pool     : Rs.2555 (via recursive_sum_fare_pool)
+  Confirmed Booked Revenue : Rs.60 (via recursive_sum_booked_revenue)
+
+2. HUB TRAFFIC & CORRIDOR DISTRIBUTION (Lab 5 2D Matrix)
+-----------------------------------------------------------------------------------------
+  Hub 0: Goa University  | Outbound Rides:  2 | Inbound Arrivals:  6
+  Hub 1: Panjim          | Outbound Rides:  2 | Inbound Arrivals:  1
+  Hub 2: Margao          | Outbound Rides:  1 | Inbound Arrivals:  1
+  Hub 3: Vasco           | Outbound Rides:  1 | Inbound Arrivals:  0
+  Hub 4: Ponda           | Outbound Rides:  2 | Inbound Arrivals:  0
+
+3. ACTIVE CARPOOL FLEET ROSTER
+-----------------------------------------------------------------------------------------
+RideID | Driver Name          | Vehicle No   | Route                            | Time   | Date       | Seats | Fare  
+-----------------------------------------------------------------------------------------
+101    | Aarav Naik           | GA-01-AB-1204 | Panjim -> Miramar Circle -> Goa  | 08:15  | 2026-11-23 | 2/4   | Rs.30  
+102    | Sneha Fernandes      | GA-08-K-4421 | Margao -> Bambolim GMC -> Goa Un | 07:30  | 2026-11-23 | 4/4   | Rs.145 
+103    | Rohan Kamat          | GA-06-M-9081 | Vasco -> Zuari Bridge -> Goa Uni | 08:00  | 2026-11-23 | 3/3   | Rs.115 
+104    | Priya Prabhu         | GA-05-T-3310 | Ponda -> Old Goa Bypass -> Goa U | 07:45  | 2026-11-23 | 4/4   | Rs.135 
+105    | Kabir Sardesai       | GA-07-C-7788 | Goa University -> Cortalim Junct | 17:30  | 2026-11-23 | 4/4   | Rs.145 
+106    | Meera D'Souza        | GA-01-Z-5519 | Goa University -> Dona Paula ->  | 17:00  | 2026-11-23 | 3/3   | Rs.30  
+107    | Faaris               | ga 08 R 1515 | Ponda -> Bambolim GMC -> Goa Uni | 08:30  | 2026-11-23 | 2/2   | Rs.135 
+108    | Mohammed Faaris Khan | ga08r1515    | Panjim -> Bambolim GMC -> Goa Un | 08:30  | 2026-11-23 | 3/3   | Rs.30  
+
+4. REGISTERED CAMPUS USERS DIRECTORY (Lab 8 & Lab #G)
+-----------------------------------------------------------------------------------------
+UserID   | Full Name              | University Email           | Role       | Phone       
+-----------------------------------------------------------------------------------------
+1001     | Mohammed Faaris Khan   | faaris@unigoa.ac.in        | Student    | 9876543210  
+1002     | Ketan Naik             | ketan@unigoa.ac.in         | Student    | 9876543211  
+1003     | Kevin Fernandes        | kevin@unigoa.ac.in         | Student    | 9876543212  
+1004     | Kreisler Mozart        | kreisler@unigoa.ac.in      | Student    | 9876543213  
+
+5. BOOKINGS AUDIT LEDGER & SEAT RESERVATIONS
+-----------------------------------------------------------------------------------------
+BookingID | RideID | Passenger Name           | Seats | TotalFare | Status    
+-----------------------------------------------------------------------------------------
+5008      | 101    | Mohammed Faaris Khan     | 1     | Rs.30     | CONFIRMED 
+5009      | 107    | Ketan Naik               | 1     | Rs.135    | CANCELLED 
+5010      | 101    | Ketan Naik               | 1     | Rs.30     | CONFIRMED 
+=========================================================================================
+CERTIFICATION: Pure C11 (GCC -Wall -Wextra -std=c11 -O2) • Zero Memory Leaks Validated.
+=========================================================================================

@@ -1,0 +1,8 @@
+9001|faaris@unigoa.ac.in|Seat Confirmed|Your seat on Ride #101 is confirmed. Boarding OTP: 7485.|BOOKING|10 mins ago|1
+9002|all@unigoa.ac.in|Campus Mobility Online|Goa University Carpool platform is live across Taleigao Plateau.|SYSTEM|1 hour ago|1
+9003|faaris@unigoa.ac.in|Ride Departure Update|Driver Aarav Naik confirmed departure at 08:15 AM from Panjim KTC.|RIDE_EDIT|35 mins ago|1
+9004|all@unigoa.ac.in|Safety Notice|Always verify driver identity and show your Boarding OTP before departure.|SECURITY_OTP|2 hours ago|1
+9005|faaris@unigoa.ac.in|Driver Profile Verified|Your driver profile has been VERIFIED by Campus Security. Trust Score: 91%.|SYSTEM|Just now|1
+9006|faaris@unigoa.ac.in|Verification Status Updated|Your driver profile has been UNVERIFIED by Campus Security. Trust Score: 61%.|SYSTEM|Just now|1
+9007|faaris@unigoa.ac.in|Driver Profile Verified|Your driver profile has been VERIFIED by Campus Security. Trust Score: 91%.|SYSTEM|Just now|1
+9008|faaris@unigoa.ac.in|Security PIN Reset|Your Goa University account PIN has been reset successfully. If this wasn't you, report to CS IT Admin.|SECURITY_OTP|Just now|1

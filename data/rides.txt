@@ -1,0 +1,8 @@
+101|Aarav Naik|GA-01-AB-1204|1|0|Panjim -> Miramar Circle -> Goa University|0815|4|1|7|30|2026-11-23|1|95
+102|Sneha Fernandes|GA-08-K-4421|2|0|Margao -> Bambolim GMC -> Goa University|0730|4|3|36|145|2026-11-23|1|95
+103|Rohan Kamat|GA-06-M-9081|3|0|Vasco -> Zuari Bridge -> Goa University|0800|3|3|28|115|2026-11-23|1|95
+104|Priya Prabhu|GA-05-T-3310|4|0|Ponda -> Old Goa Bypass -> Goa University|0745|4|4|34|135|2026-11-23|1|95
+105|Kabir Sardesai|GA-07-C-7788|0|2|Goa University -> Cortalim Junction -> Margao|1730|4|4|36|145|2026-11-23|1|95
+106|Meera D'Souza|GA-01-Z-5519|0|1|Goa University -> Dona Paula -> Panjim|1700|3|3|7|30|2026-11-23|1|95
+107|Faaris|ga 08 R 1515|4|0|Ponda -> Bambolim GMC -> Goa University|0830|2|1|34|135|2026-11-23|1|95
+108|Mohammed Faaris Khan|ga08r1515|1|0|Panjim -> Bambolim GMC -> Goa University|0830|3|3|7|30|2026-11-23|1|91

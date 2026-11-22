@@ -1,0 +1,1016 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta content="width=device-width, initial-scale=1.0, viewport-fit=cover" name="viewport"/>
+  <title>GU RideShare — Goa University Campus Carpool Matcher</title>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&display=swap" rel="stylesheet"/>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            "background": "#f7f8fb",
+            "on-primary-fixed-variant": "#2e4c7e",
+            "secondary-container": "#d9f1ea",
+            "on-secondary": "#ffffff",
+            "error": "#b3261e",
+            "surface-variant": "#e1e9f6",
+            "surface-container": "#dce4ef",
+            "outline-variant": "#c9d2df",
+            "primary-container": "#294f8b",
+            "on-surface": "#182235",
+            "error-container": "#fce4e1",
+            "surface-container-low": "#f1f4f8",
+            "on-secondary-container": "#166358",
+            "on-primary": "#ffffff",
+            "secondary-fixed": "#bfe9dd",
+            "surface-container-lowest": "#ffffff",
+            "on-error-container": "#8d1e18",
+            "surface-container-high": "#e7edf5",
+            "secondary": "#1c796c",
+            "surface-container-highest": "#dce4ef",
+            "on-error": "#ffffff",
+            "primary": "#193b70",
+            "surface": "#f7f8fb",
+            "on-surface-variant": "#63708a"
+          },
+          fontFamily: {
+            "label-md": ["Hanken Grotesk", "sans-serif"],
+            "body-md": ["Hanken Grotesk", "sans-serif"],
+            "label-sm": ["Hanken Grotesk", "sans-serif"],
+            "headline-md": ["Hanken Grotesk", "sans-serif"],
+            "mono": ["JetBrains Mono", "monospace"]
+          }
+        }
+      }
+    };
+  </script>
+  <link rel="stylesheet" href="styles.css"/>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased flex flex-col min-h-screen selection:bg-surface-variant">
+
+  <!-- Sign In / Sign Up Modal -->
+  <div class="fixed inset-0 z-[100] hidden items-center justify-center bg-primary/30 p-4 backdrop-blur-sm" id="auth-overlay">
+    <div class="w-full max-w-md rounded-3xl bg-surface-container-lowest p-5 shadow-2xl sm:p-6 border border-surface-container">
+      <div class="mb-5 flex items-center gap-3">
+        <div class="flex h-11 w-11 items-center justify-center rounded-2xl bg-primary text-on-primary">
+          <span class="material-symbols-outlined text-[24px]">school</span>
+        </div>
+        <div>
+          <h2 class="text-xl font-extrabold text-primary">GU Campus RideShare</h2>
+          <p class="text-xs text-on-surface-variant">Verified @unigoa.ac.in Community Authentication</p>
+        </div>
+      </div>
+      <div class="mb-4 flex rounded-xl bg-surface-container-low p-1">
+        <button class="flex-1 rounded-lg bg-surface-container-lowest py-2 text-sm font-bold text-primary shadow-sm" id="auth-login-tab" onclick="setAuthMode('login')">Sign in</button>
+        <button class="flex-1 rounded-lg py-2 text-sm font-semibold text-on-surface-variant" id="auth-register-tab" onclick="setAuthMode('register')">Create account</button>
+      </div>
+      <form class="flex flex-col gap-3" id="auth-form" onsubmit="submitAuth(event)">
+        <div class="hidden flex-col gap-1" id="auth-name-wrap">
+          <label class="font-label-sm text-[11px] text-on-surface-variant">Full Name</label>
+          <input class="h-11 rounded-lg bg-surface-container-low px-3 text-sm" id="auth-name" maxlength="63" placeholder="e.g. Mohammed Faaris Khan" type="text"/>
+        </div>
+        <div class="hidden flex-col gap-1" id="auth-role-wrap">
+          <label class="font-label-sm text-[11px] text-on-surface-variant">Campus Role</label>
+          <select class="h-11 rounded-lg bg-surface-container-low px-3 text-sm focus:outline-none" id="auth-role">
+            <option value="Student">Student (MCA / M.Sc / B.Tech)</option>
+            <option value="Faculty">Faculty (School of CS / Applied Sciences)</option>
+            <option value="Staff">University Staff / Administration</option>
+          </select>
+        </div>
+        <div class="hidden flex-col gap-1" id="auth-phone-wrap">
+          <label class="font-label-sm text-[11px] text-on-surface-variant">WhatsApp / Mobile No.</label>
+          <input class="h-11 rounded-lg bg-surface-container-low px-3 text-sm" id="auth-phone" placeholder="9876543210" type="tel"/>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-label-sm text-[11px] text-on-surface-variant">University Email (@unigoa.ac.in)</label>
+          <input class="h-11 rounded-lg bg-surface-container-low px-3 text-sm" id="auth-email" required placeholder="faaris.khan@unigoa.ac.in" type="email"/>
+        </div>
+        <div class="flex flex-col gap-1">
+          <div class="flex items-center justify-between">
+            <label class="font-label-sm text-[11px] text-on-surface-variant" id="auth-pass-label">Account PIN / Password</label>
+            <button type="button" class="text-[11px] text-primary hover:underline font-semibold" id="auth-forgot-link" onclick="setAuthMode('reset')">Forgot PIN?</button>
+          </div>
+          <input class="h-11 rounded-lg bg-surface-container-low px-3 text-sm" id="auth-password" required minlength="4" placeholder="4-digit PIN or password" type="password"/>
+        </div>
+        <button class="mt-1 h-11 rounded-xl bg-primary text-sm font-bold text-on-primary shadow-md hover:bg-primary-container transition-all" id="auth-submit" type="submit">Sign in</button>
+      </form>
+
+      <!-- 1-Click Quick Demo Sign-ins for Project Presentation -->
+      <div class="mt-4 pt-3 border-t border-surface-container flex flex-col gap-1.5">
+        <span class="text-[11px] font-bold text-on-surface-variant flex items-center gap-1">
+          <span class="material-symbols-outlined text-[14px] text-secondary">group</span>
+          1-Click Team Demo Logins:
+        </span>
+        <div class="grid grid-cols-2 gap-1.5 text-xs">
+          <button type="button" onclick="quickLoginTeam('faaris@unigoa.ac.in', 'pass123')" class="text-left px-2.5 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-primary font-medium truncate flex items-center gap-1">
+            <span>👨‍🎓</span> <span>Faaris (Lead)</span>
+          </button>
+          <button type="button" onclick="quickLoginTeam('ketan@unigoa.ac.in', 'pass123')" class="text-left px-2.5 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-primary font-medium truncate flex items-center gap-1">
+            <span>👨‍🎓</span> <span>Ketan (Algo)</span>
+          </button>
+          <button type="button" onclick="quickLoginTeam('kevin@unigoa.ac.in', 'pass123')" class="text-left px-2.5 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-primary font-medium truncate flex items-center gap-1">
+            <span>👨‍🎓</span> <span>Kevin (Storage)</span>
+          </button>
+          <button type="button" onclick="quickLoginTeam('kreisler@unigoa.ac.in', 'pass123')" class="text-left px-2.5 py-1.5 rounded-lg bg-surface-container-low hover:bg-surface-container text-primary font-medium truncate flex items-center gap-1">
+            <span>👨‍🎓</span> <span>Kreisler (UI)</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Driver Edit Ride Modal -->
+  <div class="fixed inset-0 z-[110] hidden items-center justify-center bg-primary/30 p-4 backdrop-blur-sm" id="edit-ride-modal">
+    <div class="w-full max-w-md rounded-3xl bg-surface-container-lowest p-5 shadow-2xl flex flex-col gap-4 border border-surface-container">
+      <div class="flex items-center justify-between border-b border-surface-container pb-2">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-[22px]">edit_road</span>
+          <span class="text-base font-bold text-primary">Edit Campus Ride</span>
+        </div>
+        <button class="p-1 text-on-surface-variant hover:text-on-surface" onclick="closeEditRideModal()">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+      <form class="flex flex-col gap-3" id="edit-ride-form" onsubmit="submitEditRide(event)">
+        <input type="hidden" id="edit-ride-id" value=""/>
+        <div class="bg-surface-container-low p-3 rounded-xl flex flex-col gap-1 text-xs">
+          <span class="font-bold text-primary" id="edit-ride-route-label">Ride #101</span>
+          <span class="text-on-surface-variant" id="edit-ride-desc-label">Origin &rarr; Destination</span>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-label-sm text-[11px] text-on-surface-variant">New Departure Time (HHMM, 24-hr format)</label>
+          <input class="h-11 rounded-lg bg-surface-container-low px-3 text-sm font-mono focus:outline-none" id="edit-ride-time" required type="text" placeholder="0830" maxlength="4"/>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-label-sm text-[11px] text-on-surface-variant">Total Vehicle Capacity (1–7 Seats)</label>
+          <input class="h-11 rounded-lg bg-surface-container-low px-3 text-sm font-mono focus:outline-none" id="edit-ride-seats" required type="number" min="1" max="7"/>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-label-sm text-[11px] text-on-surface-variant flex items-center justify-between">
+            <span>Description for Vehicle Recognition</span>
+            <span class="text-[10px] text-secondary font-medium">Model, Color, Visual Markers</span>
+          </label>
+          <input class="h-11 rounded-lg bg-surface-container-low px-3 text-sm focus:outline-none" id="edit-ride-vehicle-desc" type="text" placeholder="e.g. Silver Hyundai i20, White GU Pass #12"/>
+        </div>
+        <p class="text-[11px] text-on-surface-variant">C11 Binary Search updates the record in-place in rides.txt while preserving confirmed passenger bookings.</p>
+        <button class="h-11 bg-primary text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-md hover:bg-primary-container" type="submit">
+          <span class="material-symbols-outlined text-[18px]">save</span>
+          Save Changes (C11 Binary Search Update)
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Digital Campus Transit Pass Modal with QR Code -->
+  <div class="fixed inset-0 z-[120] hidden items-center justify-center bg-primary/40 p-4 backdrop-blur-sm" id="digital-pass-modal">
+    <div class="w-full max-w-sm rounded-3xl bg-surface-container-lowest p-5 shadow-2xl flex flex-col gap-3 text-center border-2 border-primary/20">
+      <div class="flex items-center justify-between border-b border-surface-container pb-2">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-[22px]">badge</span>
+          <span class="text-sm font-bold text-primary tracking-wide uppercase">GU Digital Transit Pass</span>
+        </div>
+        <button class="p-1 text-on-surface-variant hover:text-on-surface" onclick="closeDigitalPassModal()">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <!-- Pass Ticket Card -->
+      <div class="bg-gradient-to-b from-primary/5 to-surface-container-low rounded-2xl p-4 flex flex-col items-center gap-3 border border-primary/10">
+        <div class="flex items-center justify-between w-full text-left">
+          <div>
+            <span class="text-[10px] text-on-surface-variant uppercase font-semibold">Passenger</span>
+            <h4 class="text-sm font-extrabold text-primary" id="pass-passenger-name">Aditi Naik</h4>
+            <span class="text-[11px] text-on-surface-variant font-mono" id="pass-passenger-role">Student (MCA)</span>
+          </div>
+          <div class="text-right">
+            <span class="text-[10px] text-on-surface-variant uppercase font-semibold">Booking ID</span>
+            <h4 class="text-sm font-mono font-bold text-primary" id="pass-booking-id">#BK-501</h4>
+          </div>
+        </div>
+
+        <!-- Route Details -->
+        <div class="w-full bg-surface-container-lowest p-2.5 rounded-xl border border-surface-container flex flex-col gap-1 text-left">
+          <div class="flex items-center justify-between text-xs font-bold text-on-surface">
+            <span id="pass-origin">Panjim KTC</span>
+            <span class="material-symbols-outlined text-[16px] text-primary">arrow_forward</span>
+            <span id="pass-dest">Goa University</span>
+          </div>
+          <div class="flex items-center justify-between text-[11px] text-on-surface-variant">
+            <span id="pass-time">08:30 AM</span>
+            <span id="pass-date">2026-11-23</span>
+          </div>
+          <div class="pt-1 border-t border-surface-container text-[10px] text-on-surface-variant">
+            <strong>Campus Gate:</strong> <span id="pass-pickup">Main Admin Gate</span>
+          </div>
+        </div>
+
+        <!-- Dynamic QR Code Container -->
+        <div class="bg-white p-3 rounded-xl border border-surface-container shadow-sm flex flex-col items-center justify-center">
+          <div id="pass-qr-container" class="flex items-center justify-center min-h-[140px] min-w-[140px]"></div>
+          <span class="text-[10px] text-on-surface-variant mt-1.5 font-mono">Scan for Campus Security &amp; Driver Check-in</span>
+        </div>
+
+        <!-- Boarding OTP Callout -->
+        <div class="w-full bg-secondary-container/80 rounded-xl p-2.5 flex items-center justify-between">
+          <div class="flex flex-col text-left">
+            <span class="text-[10px] uppercase font-bold text-on-secondary-container">Boarding OTP</span>
+            <span class="text-[11px] text-on-secondary-container">Show to driver before departure</span>
+          </div>
+          <span class="text-xl font-extrabold font-mono text-on-secondary-container tracking-widest bg-white/90 px-3 py-0.5 rounded-lg shadow-sm" id="pass-otp-code">7421</span>
+        </div>
+
+        <!-- Driver & Vehicle Details -->
+        <div class="w-full text-left text-[11px] bg-surface-container-lowest p-2.5 rounded-xl border border-surface-container flex flex-col gap-1.5">
+          <div class="flex items-center justify-between">
+            <div>
+              <span class="text-on-surface-variant block text-[10px]">Driver</span>
+              <span class="font-bold text-on-surface" id="pass-driver-name">Mohammed Faaris Khan</span>
+            </div>
+            <div class="text-right">
+              <span class="text-on-surface-variant block text-[10px]">Vehicle No.</span>
+              <span class="font-mono font-bold text-primary" id="pass-vehicle-no">GA-07-K-1122</span>
+            </div>
+          </div>
+          <div class="pt-1.5 border-t border-surface-container flex items-start gap-1 text-[10px] text-on-surface-variant">
+            <span class="material-symbols-outlined text-[13px] text-secondary shrink-0 mt-0.5">visibility</span>
+            <span class="leading-tight"><strong class="text-on-surface font-semibold">Vehicle Recognition:</strong> <span id="pass-vehicle-desc" class="text-primary font-medium">Silver Hyundai i20 (White GU Pass #12)</span></span>
+          </div>
+        </div>
+
+        <!-- Campus Trust & Security Verification (Lab 1, 3, 8) -->
+        <div class="w-full bg-teal-50 border border-teal-200/80 rounded-xl p-2 flex items-center justify-between text-[11px] text-teal-800">
+          <div class="flex items-center gap-1.5 font-semibold">
+            <span class="material-symbols-outlined text-[16px] text-teal-700">verified_user</span>
+            <span>Campus Security Verified Driver</span>
+          </div>
+          <span class="font-mono text-xs font-bold text-teal-900 bg-teal-100/80 px-2 py-0.5 rounded-md" id="pass-trust-score">98% Trust</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="flex gap-2">
+        <button class="flex-1 h-10 rounded-xl bg-surface-container-low hover:bg-surface-container text-xs font-semibold text-on-surface flex items-center justify-center gap-1.5" onclick="window.print()">
+          <span class="material-symbols-outlined text-[16px]">print</span> Print Pass
+        </button>
+        <button class="flex-1 h-10 rounded-xl bg-primary text-on-primary text-xs font-semibold flex items-center justify-center gap-1.5 hover:bg-primary-container shadow" onclick="closeDigitalPassModal()">
+          Close
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Live Ride Telemetry & GPS Tracking Modal (Lab 1, 4, 8) -->
+  <div class="fixed inset-0 z-[130] hidden items-center justify-center bg-primary/50 p-4 backdrop-blur-md" id="live-tracker-modal">
+    <div class="w-full max-w-xl rounded-3xl bg-surface-container-lowest p-5 shadow-2xl flex flex-col gap-3.5 border-2 border-primary/20 max-h-[92vh] overflow-y-auto">
+      
+      <!-- Header -->
+      <div class="flex items-center justify-between border-b border-surface-container pb-2.5">
+        <div class="flex items-center gap-2">
+          <span class="w-3 h-3 rounded-full bg-emerald-500 animate-ping"></span>
+          <span class="material-symbols-outlined text-primary text-[22px]">radar</span>
+          <div>
+            <h3 class="text-sm sm:text-base font-bold text-primary flex items-center gap-1.5">
+              Live Ride Telemetry Tracker
+              <span class="text-[10px] font-mono bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold" id="track-ride-badge">#101</span>
+            </h3>
+            <span class="text-[11px] text-on-surface-variant font-mono">C11 Corridor Interpolation &amp; Telemetry Engine</span>
+          </div>
+        </div>
+        <button class="p-1 text-on-surface-variant hover:text-on-surface" onclick="closeLiveRideTracker()">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <!-- Live Telemetry KPI Cards -->
+      <div class="grid grid-cols-3 gap-2 text-center">
+        <div class="bg-primary/5 border border-primary/15 rounded-xl p-2.5 flex flex-col">
+          <span class="text-[10px] uppercase font-bold text-on-surface-variant">Estimated ETA</span>
+          <span class="text-lg sm:text-xl font-extrabold text-primary" id="track-eta-val">-- mins</span>
+          <span class="text-[10px] text-on-surface-variant" id="track-speed-val">Avg 35 km/h</span>
+        </div>
+        <div class="bg-primary/5 border border-primary/15 rounded-xl p-2.5 flex flex-col">
+          <span class="text-[10px] uppercase font-bold text-on-surface-variant">Remaining</span>
+          <span class="text-lg sm:text-xl font-extrabold text-primary" id="track-dist-val">-- km</span>
+          <span class="text-[10px] text-on-surface-variant">To Destination</span>
+        </div>
+        <div class="bg-emerald-50 border border-emerald-200 rounded-xl p-2.5 flex flex-col">
+          <span class="text-[10px] uppercase font-bold text-emerald-800">Boarding OTP</span>
+          <span class="text-lg sm:text-xl font-mono font-extrabold text-emerald-700 tracking-wider" id="track-otp-val">----</span>
+          <span class="text-[10px] text-emerald-600">Present to Driver</span>
+        </div>
+      </div>
+
+      <!-- Checkpoint Banner -->
+      <div class="bg-surface-container-high rounded-xl p-3 flex items-center justify-between text-xs border border-surface-container">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="material-symbols-outlined text-secondary text-[20px] shrink-0">pin_drop</span>
+          <div class="flex flex-col min-w-0">
+            <span class="font-bold text-on-surface truncate" id="track-checkpoint-text">Approaching Pickup Point</span>
+            <span class="text-[10px] text-on-surface-variant truncate" id="track-next-checkpoint">Next: Miramar Circle</span>
+          </div>
+        </div>
+        <span class="text-[11px] font-bold px-2 py-0.5 rounded-full bg-secondary-container text-on-secondary-container shrink-0" id="track-step-text">Step 2: Approaching</span>
+      </div>
+
+      <!-- Interactive Embedded Leaflet Map for Tracking -->
+      <div class="relative w-full h-56 sm:h-64 rounded-2xl overflow-hidden border border-surface-container shadow-inner">
+        <div id="tracker-leaflet-map" class="w-full h-full"></div>
+        <div class="absolute top-2 right-2 z-[400] bg-white/90 backdrop-blur-sm px-2.5 py-1 rounded-lg shadow-sm border border-slate-200 text-[10px] font-mono text-slate-700">
+          📍 Lat: <span id="track-lat-display">--</span>, Lng: <span id="track-lng-display">--</span>
+        </div>
+      </div>
+
+      <!-- 5-Step Trip Progress Stepper -->
+      <div class="bg-surface-container-low rounded-2xl p-3 border border-surface-container flex flex-col gap-2">
+        <span class="text-[11px] font-bold text-primary uppercase tracking-wide">Trip Progress Stepper</span>
+        <div class="grid grid-cols-5 gap-1 text-center" id="track-stepper-container">
+        </div>
+      </div>
+
+      <!-- Live Simulation Slider & Play Button for Viva Demo -->
+      <div class="bg-surface-container-lowest rounded-2xl p-3 border border-surface-container flex flex-col gap-2">
+        <div class="flex items-center justify-between text-xs">
+          <span class="font-bold text-on-surface flex items-center gap-1">
+            <span class="material-symbols-outlined text-[16px] text-primary">play_circle</span>
+            Live Transit Simulation
+          </span>
+          <div class="flex items-center gap-2">
+            <button id="track-simulate-play-btn" onclick="toggleTrackerSimulation()" class="px-2.5 py-1 bg-primary text-white rounded-lg text-xs font-semibold flex items-center gap-1 hover:bg-primary/90">
+              <span class="material-symbols-outlined text-[14px]" id="track-play-icon">play_arrow</span>
+              <span id="track-play-label">Auto Drive</span>
+            </button>
+            <span class="font-mono text-xs font-bold text-primary" id="track-slider-percent">35%</span>
+          </div>
+        </div>
+        <input type="range" min="0" max="100" value="35" class="w-full accent-primary cursor-pointer" id="track-progress-slider" oninput="onTrackerSliderChange(this.value)">
+        <div class="flex justify-between text-[10px] text-on-surface-variant font-mono">
+          <span>0% (Origin Start)</span>
+          <span>50% (Midpoint)</span>
+          <span>100% (Goa University)</span>
+        </div>
+      </div>
+
+      <!-- Driver info & Action buttons -->
+      <div class="flex items-center justify-between gap-2 pt-1 border-t border-surface-container">
+        <div class="flex items-center gap-2 text-xs min-w-0">
+          <div class="w-8 h-8 rounded-full bg-primary-container text-primary font-bold flex items-center justify-center text-xs shrink-0">
+            🚗
+          </div>
+          <div class="flex flex-col min-w-0">
+            <span class="font-bold text-on-surface truncate" id="track-driver-name">Driver Name</span>
+            <div class="flex items-center gap-1.5 text-[10px] text-on-surface-variant font-mono">
+              <span id="track-vehicle-val">GA-01-AB-1204</span>
+            </div>
+            <span class="text-[10px] text-secondary font-medium truncate max-w-[200px]" id="track-vehicle-desc">Silver Hyundai i20 (White GU Pass #12)</span>
+          </div>
+        </div>
+        <div class="flex gap-1.5">
+          <a id="track-whatsapp-link" href="#" target="_blank" class="px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1 shadow-sm">
+            <span class="material-symbols-outlined text-[15px]">chat</span> WhatsApp
+          </a>
+          <button onclick="closeLiveRideTracker()" class="px-3 py-1.5 rounded-xl bg-surface-container-high hover:bg-surface-container text-xs font-semibold text-on-surface">
+            Close
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- UPI Payment Modal -->
+  <div class="fixed inset-0 z-[110] hidden items-center justify-center bg-primary/30 p-4 backdrop-blur-sm" id="upi-modal">
+    <div class="w-full max-w-sm rounded-3xl bg-surface-container-lowest p-5 shadow-2xl flex flex-col gap-4 text-center">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-[22px]">payments</span>
+          <span class="text-base font-bold text-primary">UPI Ride Settlement</span>
+        </div>
+        <button class="p-1 text-on-surface-variant hover:text-on-surface" onclick="closeUpiModal()">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+      <div class="bg-surface-container-low rounded-2xl p-4 flex flex-col items-center gap-3">
+        <img class="w-44 h-44 rounded-xl border border-surface-container shadow-sm bg-white p-2" id="upi-qr-image" alt="UPI QR Code" src=""/>
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs text-on-surface-variant">Total Carpool Fare</span>
+          <span class="text-2xl font-extrabold text-primary" id="upi-modal-amount">&#8377;0</span>
+          <span class="text-[11px] text-on-surface-variant font-mono" id="upi-modal-vpa">gurideshare@upi</span>
+        </div>
+      </div>
+      <div class="flex flex-col gap-2">
+        <a class="h-11 bg-primary text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-md hover:bg-primary-container" id="upi-intent-link" href="#" target="_blank">
+          <span class="material-symbols-outlined text-[18px]">open_in_new</span>
+          Pay via GPay / PhonePe / Paytm
+        </a>
+        <button class="h-11 bg-secondary text-on-secondary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-md hover:bg-secondary/90" onclick="markCurrentBookingPaid()">
+          <span class="material-symbols-outlined text-[18px]">check_circle</span>
+          Mark as Settled / Paid
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification Center Drawer (Lab 4, 8 & Lab #G) -->
+  <div class="fixed inset-0 z-[115] hidden items-start justify-end bg-primary/20 backdrop-blur-sm" id="notification-overlay" onclick="toggleNotificationDrawer(false)">
+    <div class="w-full max-w-sm h-full bg-surface-container-lowest shadow-2xl flex flex-col border-l border-surface-container" onclick="event.stopPropagation()">
+      <div class="p-4 border-b border-surface-container flex items-center justify-between bg-surface-container-low">
+        <div class="flex items-center gap-2">
+          <span class="material-symbols-outlined text-primary text-[22px]">notifications_active</span>
+          <div>
+            <h3 class="text-sm font-bold text-primary">Campus Alerts &amp; Activity</h3>
+            <span class="text-[10px] text-on-surface-variant font-mono">C11 Notification Ledger (notifications.txt)</span>
+          </div>
+        </div>
+        <button class="p-1 text-on-surface-variant hover:text-on-surface" onclick="toggleNotificationDrawer(false)">
+          <span class="material-symbols-outlined text-[20px]">close</span>
+        </button>
+      </div>
+
+      <div class="px-4 py-2 bg-surface-container-lowest border-b border-surface-container flex items-center justify-between text-xs">
+        <span class="text-on-surface-variant font-semibold" id="notif-count-label">0 Alerts</span>
+        <button class="text-primary font-bold hover:underline" onclick="markAllNotificationsRead()">Mark all as read</button>
+      </div>
+
+      <div class="flex-1 overflow-y-auto p-3 flex flex-col gap-2" id="notification-list">
+        <!-- Dynamic notification cards -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="fixed top-0 w-full z-50 border-b border-surface-container bg-surface-container-lowest">
+    <div class="max-w-4xl mx-auto h-16 px-4 flex items-center justify-between">
+      <div class="flex items-center gap-2.5">
+        <div class="w-9 h-9 rounded-xl bg-primary text-on-primary flex items-center justify-center shadow-sm">
+          <span class="material-symbols-outlined text-[20px]">directions_car</span>
+        </div>
+        <div class="flex flex-col">
+          <div class="flex items-center gap-1.5">
+            <span class="font-headline-md text-[18px] font-bold text-primary tracking-tight">GU RideShare</span>
+            <span class="font-label-sm text-[11px] bg-surface-variant text-on-primary-fixed-variant px-2 py-0.5 rounded-full font-semibold">Campus</span>
+          </div>
+          <span class="font-label-sm text-[11px] text-on-surface-variant font-medium">C11 Engine &bull; Goa University</span>
+        </div>
+      </div>
+      <div class="relative flex items-center gap-2">
+        <!-- Notification Bell Icon Button (Lab 4, 8 & Lab #G) -->
+        <div class="relative">
+          <button id="notif-bell-btn" onclick="toggleNotificationDrawer()" class="relative p-2 rounded-xl text-on-surface-variant hover:text-primary hover:bg-surface-container transition-all" title="Campus Alerts & Notifications">
+            <span class="material-symbols-outlined text-[22px]">notifications</span>
+            <span id="notif-badge" class="hidden absolute top-1 right-1 min-w-[18px] h-[18px] px-1 bg-error text-white text-[10px] font-bold rounded-full flex items-center justify-center shadow-sm">0</span>
+          </button>
+        </div>
+
+        <div class="hidden sm:flex flex-col text-right">
+          <span class="text-xs font-bold text-on-surface" id="profile-name">Guest</span>
+          <span class="text-[11px] text-on-surface-variant font-label-sm" id="profile-role">Sign in to continue</span>
+        </div>
+        <div class="relative flex items-center justify-center cursor-pointer" onclick="toggleAuthModal()">
+          <div class="w-9 h-9 rounded-full bg-primary-container text-on-primary flex items-center justify-center font-bold text-xs" id="profile-initials">GU</div>
+        </div>
+        <button aria-label="Sign out" class="hidden rounded-lg p-1.5 text-on-surface-variant hover:bg-surface-container" id="sign-out-btn" onclick="signOut()" title="Sign Out">
+          <span class="material-symbols-outlined text-[19px]">logout</span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content Area -->
+  <main class="flex-1 w-full max-w-4xl mx-auto pt-20 pb-24 px-4 flex flex-col gap-4">
+
+    <!-- Toast Notification -->
+    <div class="fixed top-20 left-1/2 -translate-x-1/2 w-[calc(100%-2rem)] max-w-md z-50 transform -translate-y-24 opacity-0 transition-all duration-300 pointer-events-none" id="toast-banner">
+      <div class="bg-primary text-on-primary px-4 py-2.5 rounded-xl shadow-xl flex items-center justify-between gap-2" id="toast-box">
+        <div class="flex items-center gap-2 min-w-0">
+          <span class="material-symbols-outlined text-secondary-fixed text-[20px]" id="toast-icon">check_circle</span>
+          <span class="text-xs sm:text-sm truncate font-medium" id="toast-message">Notification</span>
+        </div>
+        <button class="text-on-primary/70 hover:text-on-primary p-1 pointer-events-auto" onclick="dismissToast()">
+          <span class="material-symbols-outlined text-[18px]">close</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Campus Banner -->
+    <section class="rounded-2xl bg-primary px-5 py-5 text-on-primary sm:px-6">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <p class="text-xs font-semibold tracking-wide text-secondary-fixed">GOA UNIVERSITY COMMUNITY CARPOOL</p>
+        <span class="inline-flex items-center gap-1 text-[11px] bg-primary-container/80 px-2.5 py-0.5 rounded-full font-semibold">
+          <span class="w-2 h-2 rounded-full bg-secondary-fixed animate-pulse"></span> Taleig&atilde;o Plateau
+        </span>
+      </div>
+      <h1 class="mt-1 max-w-xl text-2xl font-extrabold tracking-tight sm:text-3xl">Smart Campus Mobility &amp; Rides.</h1>
+      <p class="mt-2 max-w-lg text-sm leading-6 text-on-primary/80">Search routes, compare seats &amp; fares, navigate campus pickup stops, and carpool seamlessly.</p>
+      <div class="mt-4 flex flex-wrap gap-2">
+        <button class="inline-flex items-center gap-1.5 rounded-lg bg-on-primary px-3.5 py-2 text-sm font-semibold text-primary" onclick="document.getElementById('filter-origin').scrollIntoView({ behavior: 'smooth', block: 'center' })">
+          Find a ride <span class="material-symbols-outlined text-[18px]">arrow_downward</span>
+        </button>
+        <button class="inline-flex items-center gap-1.5 rounded-lg bg-primary-container px-3.5 py-2 text-sm font-semibold text-on-primary hover:bg-surface-variant/20" onclick="switchTab('map')">
+          <span class="material-symbols-outlined text-[18px]">map</span> Interactive Map
+        </button>
+        <button class="inline-flex items-center gap-1.5 rounded-lg bg-secondary px-3.5 py-2 text-sm font-semibold text-on-secondary hover:bg-secondary/90 shadow" onclick="exportAuditReport()">
+          <span class="material-symbols-outlined text-[18px]">description</span> Export C Audit Report
+        </button>
+      </div>
+    </section>
+
+    <!-- KPI Stats Bar -->
+    <div class="grid grid-cols-2 divide-x divide-surface-container rounded-xl border border-surface-container bg-surface-container-lowest sm:grid-cols-4">
+      <div class="p-3 sm:px-4"><span class="block text-[11px] font-medium text-on-surface-variant">Live rides</span><span class="mt-0.5 block text-lg font-bold text-on-surface" id="kpi-rides">0</span></div>
+      <div class="p-3 sm:px-4"><span class="block text-[11px] font-medium text-on-surface-variant">Open seats</span><span class="mt-0.5 block text-lg font-bold text-secondary" id="kpi-seats">0</span></div>
+      <div class="hidden p-3 sm:block sm:px-4"><span class="block text-[11px] font-medium text-on-surface-variant">Available fares</span><span class="mt-0.5 block text-lg font-bold text-on-surface" id="kpi-pool">&#8377;0</span></div>
+      <div class="hidden p-3 sm:block sm:px-4"><span class="block text-[11px] font-medium text-on-surface-variant">Confirmed value</span><span class="mt-0.5 block text-lg font-bold text-primary" id="kpi-revenue">&#8377;0</span></div>
+    </div>
+
+    <!-- Search & Filter Card -->
+    <div class="bg-surface-container-lowest p-4 rounded-2xl border border-surface-container flex flex-col gap-3">
+      <div class="flex items-center justify-between">
+        <span class="text-base text-on-surface font-semibold flex items-center gap-1.5">
+          <span class="material-symbols-outlined text-primary text-[20px]">explore</span>
+          Where are you headed?
+        </span>
+        <button class="font-label-sm text-xs text-primary hover:underline font-semibold" onclick="resetFilters()">Reset</button>
+      </div>
+
+      <!-- Hub Selector Filters -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div class="flex flex-col gap-1">
+          <label class="font-label-sm text-[11px] text-on-surface-variant">From (Origin Hub)</label>
+          <div class="relative">
+            <select class="w-full h-11 pl-3 pr-8 bg-surface-container-low text-on-surface text-sm rounded-lg appearance-none focus:outline-none focus:bg-surface-container" id="filter-origin" onchange="applyFilters()">
+              <option value="-1">Any Origin</option>
+              <option value="0">0: Goa University</option>
+              <option value="1">1: Panjim</option>
+              <option value="2">2: Margao</option>
+              <option value="3">3: Vasco</option>
+              <option value="4">4: Ponda</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-2.5 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+          </div>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-label-sm text-[11px] text-on-surface-variant">To (Destination Hub)</label>
+          <div class="relative">
+            <select class="w-full h-11 pl-3 pr-8 bg-surface-container-low text-on-surface text-sm rounded-lg appearance-none focus:outline-none focus:bg-surface-container" id="filter-destination" onchange="applyFilters()">
+              <option value="-1">Any Destination</option>
+              <option value="0">0: Goa University</option>
+              <option value="1">1: Panjim</option>
+              <option value="2">2: Margao</option>
+              <option value="3">3: Vasco</option>
+              <option value="4">4: Ponda</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-2.5 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Date & Min Seats Filter Controls -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div class="flex flex-col gap-1">
+          <label class="font-label-sm text-[11px] text-on-surface-variant">Travel Date (Lab 4/7 Linear Filter)</label>
+          <input class="w-full h-11 px-3 bg-surface-container-low text-on-surface text-sm rounded-lg focus:outline-none focus:bg-surface-container" id="filter-date" type="date" onchange="applyFilters()"/>
+        </div>
+        <div class="flex flex-col gap-1">
+          <label class="font-label-sm text-[11px] text-on-surface-variant">Min. Available Seats</label>
+          <div class="relative">
+            <select class="w-full h-11 pl-3 pr-8 bg-surface-container-low text-on-surface text-sm rounded-lg appearance-none focus:outline-none focus:bg-surface-container" id="filter-min-seats" onchange="applyFilters()">
+              <option value="0">Any Available Seats</option>
+              <option value="1">At least 1 Seat</option>
+              <option value="2">At least 2 Seats</option>
+              <option value="3">At least 3 Seats</option>
+              <option value="4">At least 4 Seats</option>
+            </select>
+            <span class="material-symbols-outlined absolute right-2 top-2.5 text-on-surface-variant pointer-events-none text-[18px]">expand_more</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Keyword and Ride ID Lookup -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+        <div class="flex gap-2">
+          <div class="relative flex-1">
+            <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[20px]">search</span>
+            <input class="w-full h-11 pl-10 pr-3 bg-surface-container-low text-on-surface text-sm rounded-lg focus:outline-none focus:bg-surface-container placeholder:text-on-surface-variant/60" id="keyword-search" placeholder="Landmark, route or driver" type="text"/>
+          </div>
+          <button class="h-11 px-3.5 bg-primary text-on-primary rounded-lg font-label-md text-xs font-semibold flex items-center justify-center shrink-0" onclick="applyFilters()">
+            Search
+          </button>
+        </div>
+
+        <div class="flex items-center gap-2">
+          <div class="relative flex-1">
+            <span class="material-symbols-outlined absolute left-3 top-3 text-on-surface-variant text-[18px]">tag</span>
+            <input class="w-full h-11 pl-9 pr-3 bg-surface-container-low text-on-surface font-label-sm text-xs rounded-lg focus:outline-none focus:bg-surface-container" id="ride-id-search" placeholder="Ride ID (e.g. 101)" type="text"/>
+          </div>
+          <button class="h-11 px-3.5 bg-surface-container-highest text-primary-container rounded-lg font-label-sm text-xs font-semibold shrink-0" onclick="lookupRideId()">
+            Lookup ID
+          </button>
+        </div>
+      </div>
+
+      <!-- Quick Action Pills -->
+      <div class="flex items-center gap-2 pt-1 overflow-x-auto no-scrollbar">
+        <button class="px-3 py-1.5 rounded-full font-label-sm text-xs font-medium bg-surface-container text-on-surface flex items-center gap-1 whitespace-nowrap" id="sort-time-btn" onclick="toggleSort('time')">
+          <span class="material-symbols-outlined text-[15px]">schedule</span>
+          Earliest departure
+        </button>
+        <button class="px-3 py-1.5 rounded-full font-label-sm text-xs font-medium bg-surface-container-low text-on-surface-variant flex items-center gap-1 whitespace-nowrap" id="sort-fare-btn" onclick="toggleSort('fare')">
+          <span class="material-symbols-outlined text-[15px]">currency_rupee</span>
+          Lowest fare
+        </button>
+        <button class="px-3 py-1.5 rounded-full font-label-sm text-xs font-medium bg-secondary-container/40 text-on-secondary-container flex items-center gap-1 whitespace-nowrap" onclick="quickSelectPlateau()">
+          <span class="material-symbols-outlined text-[15px]">school</span>
+          To Goa University
+        </button>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <div class="bg-surface-container-high p-1 rounded-xl flex items-center gap-1">
+      <button class="flex-1 py-2 px-1.5 rounded-lg bg-surface-container-lowest text-primary text-xs sm:text-sm font-semibold text-center flex items-center justify-center gap-1 shadow-sm transition-all" id="tab-btn-rides" onclick="switchTab('rides')">
+        <span>Rides</span>
+        <span class="bg-primary text-on-primary text-[10px] sm:text-[11px] font-mono px-1.5 py-0.2 rounded-full" id="tab-count-rides">0</span>
+      </button>
+      <button class="flex-1 py-2 px-1.5 rounded-lg text-on-surface-variant text-xs sm:text-sm font-semibold text-center flex items-center justify-center gap-1 transition-all" id="tab-btn-map" onclick="switchTab('map')">
+        <span class="material-symbols-outlined text-[17px]">map</span>
+        <span>Campus Map</span>
+      </button>
+      <button class="flex-1 py-2 px-1.5 rounded-lg text-on-surface-variant text-xs sm:text-sm font-semibold text-center flex items-center justify-center gap-1 transition-all" id="tab-btn-bookings" onclick="switchTab('bookings')">
+        <span>Bookings</span>
+        <span class="bg-surface-variant text-on-primary-fixed-variant text-[10px] sm:text-[11px] font-mono px-1.5 py-0.2 rounded-full" id="tab-count-bookings">0</span>
+      </button>
+      <button class="flex-1 py-2 px-1.5 rounded-lg text-on-surface-variant text-xs sm:text-sm font-semibold text-center flex items-center justify-center gap-1 transition-all" id="tab-btn-matrix" onclick="switchTab('matrix')">
+        <span>Fare Guide</span>
+      </button>
+      <button class="flex-1 py-2 px-1.5 rounded-lg text-on-surface-variant text-xs sm:text-sm font-semibold text-center flex items-center justify-center gap-1 transition-all" id="tab-btn-admin" onclick="switchTab('admin')">
+        <span class="material-symbols-outlined text-[17px]">admin_panel_settings</span>
+        <span>Admin</span>
+      </button>
+    </div>
+
+    <!-- Primary Action Toggle -->
+    <button class="w-full bg-primary hover:bg-primary-container text-on-primary rounded-xl py-3 px-4 flex items-center justify-between shadow-md transition-all" onclick="openRelevantActionPanel()">
+      <div class="flex items-center gap-2">
+        <span class="material-symbols-outlined text-[22px] text-secondary-fixed">add_circle</span>
+        <span class="text-sm sm:text-base font-semibold text-left" id="primary-action-label">Offer a ride or reserve a seat</span>
+      </div>
+      <span class="material-symbols-outlined text-[20px] transition-transform" id="panel-toggle-icon">expand_more</span>
+    </button>
+
+    <!-- Action Drawer: Offer Ride & Reserve Seat -->
+    <div class="hidden" id="action-panel">
+      <div class="bg-surface-container-lowest p-4 rounded-2xl shadow-lg flex flex-col gap-4">
+        <div class="flex border-b border-surface-container">
+          <button class="flex-1 pb-2 text-sm sm:text-base font-bold text-primary border-b-2 border-primary flex items-center justify-center gap-1.5" id="action-subtab-offer" onclick="switchSubAction('offer')">
+            <span class="material-symbols-outlined text-[18px]">drive_eta</span>
+            Offer Ride
+          </button>
+          <button class="flex-1 pb-2 text-sm sm:text-base font-medium text-on-surface-variant flex items-center justify-center gap-1.5" id="action-subtab-book" onclick="switchSubAction('book')">
+            <span class="material-symbols-outlined text-[18px]">airline_seat_recline_normal</span>
+            Reserve a Seat
+          </button>
+        </div>
+
+        <!-- Form: Offer Ride -->
+        <form class="flex flex-col gap-3" id="form-offer-ride" onsubmit="handleOfferRide(event)">
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div class="flex flex-col gap-1">
+              <label class="font-label-sm text-[11px] text-on-surface-variant">Driver Full Name</label>
+              <input class="h-10 px-3 bg-surface-container-low text-on-surface rounded-lg text-sm focus:outline-none focus:bg-surface-container" id="offer-name" readonly required type="text" placeholder="Sign in as a driver"/>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="font-label-sm text-[11px] text-on-surface-variant">Vehicle Registration No.</label>
+              <input class="h-10 px-3 bg-surface-container-low text-on-surface rounded-lg text-sm focus:outline-none focus:bg-surface-container uppercase font-mono" id="offer-vehicle" required type="text" placeholder="GA-07-E-4421"/>
+            </div>
+          </div>
+
+          <!-- Description for Vehicle Recognition -->
+          <div class="flex flex-col gap-1">
+            <label class="font-label-sm text-[11px] text-on-surface-variant flex items-center justify-between">
+              <span>Description for Vehicle Recognition</span>
+              <span class="text-[10px] text-secondary font-medium">Make, Model, Color &amp; Visual Identifiers</span>
+            </label>
+            <input class="h-10 px-3 bg-surface-container-low text-on-surface rounded-lg text-sm focus:outline-none focus:bg-surface-container placeholder:text-on-surface-variant/60" id="offer-vehicle-desc" type="text" placeholder="e.g. Silver Hyundai i20, White GU parking sticker on windshield"/>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div class="flex flex-col gap-1">
+              <label class="font-label-sm text-[11px] text-on-surface-variant">Departure Date</label>
+              <input class="h-10 px-3 bg-surface-container-low text-on-surface rounded-lg text-sm focus:outline-none" id="offer-date" required type="date"/>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="font-label-sm text-[11px] text-on-surface-variant">Driver WhatsApp / Phone</label>
+              <input class="h-10 px-3 bg-surface-container-low text-on-surface rounded-lg text-sm focus:outline-none" id="offer-phone" required type="tel" placeholder="e.g. 9876543210"/>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5">
+            <div class="flex flex-col gap-1">
+              <label class="font-label-sm text-[11px] text-on-surface-variant">Origin Hub</label>
+              <select class="h-10 px-2.5 bg-surface-container-low text-on-surface rounded-lg text-sm focus:outline-none" id="offer-origin">
+                <option value="1">1: Panjim</option>
+                <option value="2">2: Margao</option>
+                <option value="3">3: Vasco</option>
+                <option value="4">4: Ponda</option>
+                <option value="0">0: Goa University</option>
+              </select>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="font-label-sm text-[11px] text-on-surface-variant">Destination Hub</label>
+              <select class="h-10 px-2.5 bg-surface-container-low text-on-surface rounded-lg text-sm focus:outline-none" id="offer-destination">
+                <option value="0" selected>0: Goa University</option>
+                <option value="1">1: Panjim</option>
+                <option value="2">2: Margao</option>
+                <option value="3">3: Vasco</option>
+                <option value="4">4: Ponda</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div class="flex flex-col gap-1">
+              <label class="font-label-sm text-[11px] text-on-surface-variant">Campus Pickup / Drop-off Point</label>
+              <select class="h-10 px-2.5 bg-surface-container-low text-on-surface rounded-lg text-sm focus:outline-none" id="offer-campus-point">
+                <option value="Main Administrative Gate">Main Administrative Gate</option>
+                <option value="Faculty of Science & Tech">Faculty of Science &amp; Tech</option>
+                <option value="University Central Library">University Central Library</option>
+                <option value="Silver Jubilee Hall">Silver Jubilee Hall</option>
+                <option value="Hostels & Sports Complex">Hostels &amp; Sports Complex</option>
+              </select>
+            </div>
+            <div class="grid grid-cols-2 gap-2">
+              <div class="flex flex-col gap-1">
+                <label class="font-label-sm text-[11px] text-on-surface-variant">Time (HHMM)</label>
+                <input class="h-10 px-3 bg-surface-container-low text-on-surface rounded-lg text-sm focus:outline-none font-mono" id="offer-time" required type="text" value="0830" placeholder="0830"/>
+              </div>
+              <div class="flex flex-col gap-1">
+                <label class="font-label-sm text-[11px] text-on-surface-variant">Seats (1–7)</label>
+                <div class="flex items-center h-10 bg-surface-container-low rounded-lg px-2 justify-between">
+                  <button class="text-primary font-bold text-lg px-1" onclick="decrementOfferSeats()" type="button">-</button>
+                  <span class="font-mono text-sm font-bold text-on-surface" id="offer-seats-val">3</span>
+                  <button class="text-primary font-bold text-lg px-1" onclick="incrementOfferSeats()" type="button">+</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-1">
+            <label class="font-label-sm text-[11px] text-on-surface-variant">Via Landmark / Intermediate Stop</label>
+            <input class="h-10 px-3 bg-surface-container-low text-on-surface rounded-lg text-sm focus:outline-none" id="offer-stops" type="text" value="Bambolim GMC"/>
+          </div>
+
+          <button class="mt-1 h-11 bg-primary hover:bg-primary-container text-on-primary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-md" type="submit">
+            <span class="material-symbols-outlined text-[20px]">add_road</span>
+            Publish Campus Ride (C11 Matrix Fare)
+          </button>
+        </form>
+
+        <!-- Form: Reserve Seat -->
+        <form class="hidden flex-col gap-3" id="form-book-ride" onsubmit="handleBookSeat(event)">
+          <div class="flex flex-col gap-1">
+            <label class="font-label-sm text-[11px] text-on-surface-variant">Select Open Ride</label>
+            <select class="h-11 px-3 bg-surface-container-low text-on-surface rounded-lg text-sm focus:outline-none" id="book-ride-select" onchange="updateBookingEstimate()"></select>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div class="flex flex-col gap-1">
+              <label class="font-label-sm text-[11px] text-on-surface-variant">Booking for</label>
+              <input class="h-10 px-3 bg-surface-container-low text-on-surface rounded-lg text-sm focus:outline-none" id="book-passenger" readonly required type="text" placeholder="Sign in as a rider"/>
+            </div>
+            <div class="flex flex-col gap-1">
+              <label class="font-label-sm text-[11px] text-on-surface-variant">Seats Required</label>
+              <div class="flex items-center h-10 bg-surface-container-low rounded-lg px-2 justify-between">
+                <button class="text-primary font-bold text-lg px-2" onclick="decrementBookSeats()" type="button">-</button>
+                <span class="font-mono text-sm font-bold text-on-surface" id="book-seats-val">1</span>
+                <button class="text-primary font-bold text-lg px-2" onclick="incrementBookSeats()" type="button">+</button>
+              </div>
+            </div>
+          </div>
+
+          <div class="bg-surface-container-high rounded-xl p-3 flex items-center justify-between">
+            <div class="flex flex-col">
+              <span class="font-label-sm text-[11px] text-on-surface-variant">Estimated fare</span>
+              <span class="text-xs text-on-surface font-medium">Automatic 2D matrix calculation</span>
+            </div>
+            <span class="text-xl text-primary font-bold" id="book-fare-preview">&#8377;0</span>
+          </div>
+
+          <button class="mt-1 h-11 bg-secondary hover:bg-secondary/90 text-on-secondary rounded-xl text-sm font-semibold flex items-center justify-center gap-2 shadow-md" type="submit">
+            <span class="material-symbols-outlined text-[20px]">check_circle</span>
+            Confirm Ride Booking &amp; Generate Boarding OTP
+          </button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Suggested Connection Banner -->
+    <div class="hidden bg-surface-container-high border border-primary/20 rounded-2xl p-3.5 items-center gap-3" id="hub-suggestion-banner">
+      <span class="material-symbols-outlined text-primary text-[22px]">alt_route</span>
+      <div class="flex flex-col text-xs sm:text-sm">
+        <span class="font-bold text-primary">Try this connection instead</span>
+        <span class="text-on-surface-variant" id="hub-suggestion-text"></span>
+      </div>
+    </div>
+
+    <!-- TAB 1: Rides -->
+    <div class="flex flex-col gap-3" id="tab-content-rides">
+      <div class="flex items-center justify-between">
+        <span class="text-base text-on-surface font-semibold">Available campus rides</span>
+        <span class="font-label-sm text-xs text-on-surface-variant" id="rides-count-label">Loading...</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="rides-grid"></div>
+    </div>
+
+    <!-- TAB 2: Interactive Campus Map -->
+    <div class="hidden flex-col gap-3" id="tab-content-map">
+      <div class="flex items-center justify-between">
+        <div class="flex flex-col">
+          <h2 class="text-base text-on-surface font-bold">Interactive Goa &amp; Campus Map</h2>
+          <p class="text-xs text-on-surface-variant">Live visual routes, transit nodes, and Taleig&atilde;o Plateau campus stops.</p>
+        </div>
+        <button class="text-xs text-primary font-semibold hover:underline" onclick="resetMapView()">Fit All Stops</button>
+      </div>
+      <div class="bg-surface-container-lowest p-3 rounded-2xl shadow-sm border border-surface-container">
+        <div id="leaflet-map"></div>
+      </div>
+      <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center text-xs">
+        <div class="bg-surface-container-lowest p-2 rounded-xl border border-surface-container"><span class="block font-bold text-primary">Goa Univ</span><span class="text-[10px] text-on-surface-variant">Campus Plateau</span></div>
+        <div class="bg-surface-container-lowest p-2 rounded-xl border border-surface-container"><span class="block font-bold text-on-surface">Panjim</span><span class="text-[10px] text-on-surface-variant">7 km away</span></div>
+        <div class="bg-surface-container-lowest p-2 rounded-xl border border-surface-container"><span class="block font-bold text-on-surface">Margao</span><span class="text-[10px] text-on-surface-variant">36 km away</span></div>
+        <div class="bg-surface-container-lowest p-2 rounded-xl border border-surface-container"><span class="block font-bold text-on-surface">Vasco</span><span class="text-[10px] text-on-surface-variant">28 km away</span></div>
+        <div class="bg-surface-container-lowest p-2 rounded-xl border border-surface-container"><span class="block font-bold text-on-surface">Ponda</span><span class="text-[10px] text-on-surface-variant">34 km away</span></div>
+      </div>
+    </div>
+
+    <!-- TAB 3: Bookings -->
+    <div class="hidden flex-col gap-3" id="tab-content-bookings">
+      <div class="flex items-center justify-between">
+        <span class="text-base text-on-surface font-semibold">My bookings &amp; Boarding OTPs</span>
+        <span class="font-label-sm text-xs bg-secondary-container/40 text-on-secondary-container font-semibold px-2.5 py-0.5 rounded-full" id="bookings-count-label">0 Entries</span>
+      </div>
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3" id="bookings-grid"></div>
+    </div>
+
+    <!-- TAB 4: Fare Matrix & Analytics -->
+    <div class="hidden flex-col gap-4" id="tab-content-matrix">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex flex-col gap-0.5">
+          <h2 class="text-base text-on-surface font-bold">2D Transit Distance &amp; Fare Guide</h2>
+          <p class="text-xs text-on-surface-variant">Lab 5 2D Matrix calculations across all 5 Goa transit hubs.</p>
+        </div>
+        <button class="inline-flex items-center gap-1.5 rounded-lg bg-secondary text-on-secondary px-3 py-1.5 text-xs font-semibold shadow hover:bg-secondary/90 transition-all" onclick="exportAuditReport()">
+          <span class="material-symbols-outlined text-[16px]">download</span> Export Audit File
+        </button>
+      </div>
+
+      <div class="bg-surface-container-lowest rounded-2xl p-3 shadow-sm overflow-x-auto border border-surface-container">
+        <table class="w-full text-center border-collapse min-w-[520px]" id="matrix-table"></table>
+      </div>
+
+      <!-- Formal Audit Report Preview Section -->
+      <div class="bg-surface-container-lowest rounded-2xl p-4 border border-surface-container shadow-sm flex flex-col gap-2.5">
+        <div class="flex items-center justify-between">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[20px]">analytics</span>
+            <span class="text-sm font-bold text-primary">C11 Backend Audit Report (campus_summary.txt)</span>
+          </div>
+          <button class="text-xs text-primary font-semibold hover:underline" onclick="fetchReportPreview()">Refresh</button>
+        </div>
+        <pre class="bg-surface-container-low p-3 rounded-xl text-xs font-mono text-on-surface overflow-x-auto max-h-64 whitespace-pre" id="audit-report-preview">Click "Export C Audit Report" or refresh to inspect the generated C11 audit summary.</pre>
+      </div>
+    </div>
+
+    <!-- TAB 5: Master Admin Console & Safety Oversight (Lab 4, 8 & Lab #G) -->
+    <div class="hidden flex-col gap-4" id="tab-content-admin">
+      <div class="flex items-center justify-between flex-wrap gap-2">
+        <div class="flex flex-col gap-0.5">
+          <h2 class="text-base text-on-surface font-bold flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-primary text-[22px]">admin_panel_settings</span>
+            Master Campus Admin &amp; Safety Console
+          </h2>
+          <p class="text-xs text-on-surface-variant">Live C11 heap dynamic memory metrics, driver KYC verification, and database defragmentation.</p>
+        </div>
+        <div class="flex gap-2">
+          <button class="inline-flex items-center gap-1.5 rounded-lg bg-error/10 hover:bg-error hover:text-white text-error px-3 py-1.5 text-xs font-semibold shadow-sm transition-all" onclick="purgeCancelledBookings()">
+            <span class="material-symbols-outlined text-[16px]">mop</span> Purge Cancelled &amp; Defrag Heap
+          </button>
+          <button class="inline-flex items-center gap-1.5 rounded-lg bg-primary text-on-primary px-3 py-1.5 text-xs font-semibold shadow hover:bg-primary/90 transition-all" onclick="loadAdminMetrics()">
+            <span class="material-symbols-outlined text-[16px]">refresh</span> Refresh Diagnostics
+          </button>
+        </div>
+      </div>
+
+      <!-- Live C11 Dynamic Heap Diagnostics Card -->
+      <div class="bg-surface-container-lowest rounded-2xl p-4 border border-surface-container shadow-sm flex flex-col gap-3">
+        <div class="flex items-center justify-between border-b border-surface-container pb-2">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[20px]">memory</span>
+            <span class="text-sm font-bold text-primary">C11 Heap Memory Diagnostics (Lab 8 Dynamic malloc/realloc/free)</span>
+          </div>
+          <span class="text-xs font-mono font-bold text-primary bg-primary/10 px-2.5 py-0.5 rounded-full" id="admin-total-heap">Loading bytes...</span>
+        </div>
+
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+          <div class="bg-surface-container-low p-3 rounded-xl border border-surface-container flex flex-col gap-1">
+            <span class="text-[11px] text-on-surface-variant font-semibold">Ride Struct Heap</span>
+            <span class="text-base font-extrabold font-mono text-primary" id="admin-heap-rides">0 B</span>
+            <span class="text-[10px] text-on-surface-variant font-mono" id="admin-cap-rides">Cap: 0 / Count: 0</span>
+          </div>
+          <div class="bg-surface-container-low p-3 rounded-xl border border-surface-container flex flex-col gap-1">
+            <span class="text-[11px] text-on-surface-variant font-semibold">Booking Struct Heap</span>
+            <span class="text-base font-extrabold font-mono text-secondary" id="admin-heap-bookings">0 B</span>
+            <span class="text-[10px] text-on-surface-variant font-mono" id="admin-cap-bookings">Cap: 0 / Count: 0</span>
+          </div>
+          <div class="bg-surface-container-low p-3 rounded-xl border border-surface-container flex flex-col gap-1">
+            <span class="text-[11px] text-on-surface-variant font-semibold">User Struct Heap</span>
+            <span class="text-base font-extrabold font-mono text-amber-700" id="admin-heap-users">0 B</span>
+            <span class="text-[10px] text-on-surface-variant font-mono" id="admin-cap-users">Cap: 0 / Count: 0</span>
+          </div>
+          <div class="bg-surface-container-low p-3 rounded-xl border border-surface-container flex flex-col gap-1">
+            <span class="text-[11px] text-on-surface-variant font-semibold">Notif Struct Heap</span>
+            <span class="text-base font-extrabold font-mono text-indigo-700" id="admin-heap-notifs">0 B</span>
+            <span class="text-[10px] text-on-surface-variant font-mono" id="admin-cap-notifs">Cap: 0 / Count: 0</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Campus User & Driver Directory Ledger -->
+      <div class="bg-surface-container-lowest rounded-2xl p-4 border border-surface-container shadow-sm flex flex-col gap-3">
+        <div class="flex items-center justify-between border-b border-surface-container pb-2">
+          <div class="flex items-center gap-2">
+            <span class="material-symbols-outlined text-primary text-[20px]">badge</span>
+            <span class="text-sm font-bold text-primary">Registered Campus Accounts &amp; Driver KYC Verification</span>
+          </div>
+          <span class="text-xs text-on-surface-variant font-mono" id="admin-user-count-label">0 Users</span>
+        </div>
+
+        <div class="overflow-x-auto">
+          <table class="w-full text-left border-collapse text-xs min-w-[550px]" id="admin-users-table">
+            <thead>
+              <tr class="bg-surface-container-high text-primary font-bold">
+                <th class="p-2.5 rounded-tl-lg">User</th>
+                <th class="p-2.5">Email</th>
+                <th class="p-2.5">Role</th>
+                <th class="p-2.5">Trust Score</th>
+                <th class="p-2.5">DL / Identity</th>
+                <th class="p-2.5 text-right rounded-tr-lg">Action</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-surface-container text-on-surface" id="admin-users-tbody">
+              <!-- Rendered dynamically -->
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer info banner -->
+    <div class="bg-surface-container-low rounded-2xl p-3.5 flex items-center justify-between">
+      <div class="flex items-center gap-3 min-w-0">
+        <div class="w-10 h-10 rounded-full bg-secondary-container flex items-center justify-center text-on-secondary-container shrink-0">
+          <span class="material-symbols-outlined text-[20px]">verified_user</span>
+        </div>
+        <div class="flex flex-col min-w-0">
+          <span class="text-sm font-bold text-on-surface">Goa University Campus Safety</span>
+          <span class="text-xs text-on-surface-variant truncate">Strictly for Goa University Students, Faculty &amp; Staff (@unigoa.ac.in).</span>
+        </div>
+      </div>
+      <span class="material-symbols-outlined text-secondary text-[24px]">school</span>
+    </div>
+  </main>
+
+  <!-- Mobile Bottom Navigation Bar -->
+  <nav class="fixed bottom-0 w-full z-50 border-t border-surface-container bg-surface-container-lowest">
+    <div class="max-w-4xl mx-auto h-16 px-4 grid grid-cols-5 items-center gap-1">
+      <button class="flex flex-col items-center justify-center py-1 text-primary font-semibold" id="nav-btn-rides" onclick="switchTab('rides')">
+        <span class="material-symbols-outlined text-[22px]">directions_car</span>
+        <span class="font-label-sm text-[10px] mt-0.5">Rides</span>
+      </button>
+      <button class="flex flex-col items-center justify-center py-1 text-on-surface-variant hover:text-on-surface" id="nav-btn-map" onclick="switchTab('map')">
+        <span class="material-symbols-outlined text-[22px]">map</span>
+        <span class="font-label-sm text-[10px] mt-0.5">Map</span>
+      </button>
+      <button class="flex flex-col items-center justify-center py-1 text-on-surface-variant hover:text-on-surface" onclick="openAction('offer')">
+        <span class="material-symbols-outlined text-[22px]">add_circle</span>
+        <span class="font-label-sm text-[10px] mt-0.5">Offer</span>
+      </button>
+      <button class="flex flex-col items-center justify-center py-1 text-on-surface-variant hover:text-on-surface" onclick="openAction('book')">
+        <span class="material-symbols-outlined text-[22px]">airline_seat_recline_normal</span>
+        <span class="font-label-sm text-[10px] mt-0.5">Reserve</span>
+      </button>
+      <button class="flex flex-col items-center justify-center py-1 text-on-surface-variant hover:text-on-surface" id="nav-btn-bookings" onclick="switchTab('bookings')">
+        <span class="material-symbols-outlined text-[22px]">confirmation_number</span>
+        <span class="font-label-sm text-[10px] mt-0.5">Bookings</span>
+      </button>
+    </div>
+  </nav>
+
+  <script src="app.js"></script>
+</body>
+</html>

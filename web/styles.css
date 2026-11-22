@@ -1,0 +1,7 @@
+/* GU RideShare — custom styles (Tailwind handles the rest via CDN). */
+html, body { margin: 0; padding: 0; }
+body { letter-spacing: -0.01em; }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+#leaflet-map { height: 380px; width: 100%; border-radius: 1rem; z-index: 10; }
+.leaflet-popup-content-wrapper { border-radius: 0.75rem; font-family: 'Hanken Grotesk', sans-serif; }

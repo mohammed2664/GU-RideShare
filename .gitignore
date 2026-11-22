@@ -1,0 +1,22 @@
+# Compiled binary
+build/
+*.exe
+*.o
+*.out
+
+# Python caches
+__pycache__/
+*.pyc
+
+# User data and sessions (never commit credentials)
+data/users.txt
+data/sessions.json
+data/rides_meta.json
+data/bookings_meta.json
+users.txt
+sessions.json
+rides_meta.json
+bookings_meta.json
+
+# Atomic-write temp files
+*.tmp

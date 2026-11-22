@@ -10,19 +10,25 @@
 - **Kevin Fernandes (Roll 2624):** Parameter Validation, $5 \times 5$ Matrices, Greedy Detour, Recursive Analytics
 - **Kreisler Mozart (Roll 2625):** CLI Dispatcher, Terminal Menu, Python IPC Bridge, Leaflet GIS, Dynamic QR Pass
 
+**GitHub Repository:** [https://github.com/mohammed2664/GU-RideShare](https://github.com/mohammed2664/GU-RideShare)  
+**Active Branch:** `main`  
+**Last Synchronized:** 22nd November 2026
+
 ---
 
 ## 1. Executive Summary & Project Status
-The **GU Campus RideShare & Carpool Matcher** is fully built, compiled, and verified. It strictly adheres to pure C11 machine code standards for all algorithmic computation, wrapped seamlessly with an anonymous pipe IPC bridge in Python and a responsive Tailwind + Leaflet GIS client presentation layer.
+The **GU Campus RideShare & Carpool Matcher** is fully built, compiled, verified, and pushed to GitHub. It strictly adheres to pure C11 machine code standards for all algorithmic computation, wrapped seamlessly with an anonymous pipe IPC bridge in Python and a responsive Tailwind + Leaflet GIS client presentation layer.
 
 ### System Verification Checklist:
-- [x] **C11 Core Engine:** Clean compilation with `gcc -Wall -Wextra -std=c11 -O2` into `build/rideshare.exe`.
+- [x] **C11 Core Engine:** Clean compilation with `gcc -Wall -Wextra -std=c11 -O2` into `build/rideshare.exe` with **0 warnings**.
 - [x] **Automated Self-Tests:** **6/6 tests passing** (Lab 3 branching error codes, Lab 5 $5 \times 5$ matrix distance/fare calculations, Lab 7 recursion + Lab 8 heap loading, and trust scoring engine).
 - [x] **Standalone Terminal Mode:** Fully interactive 15-option terminal CLI menu running directly in console.
 - [x] **Web Dashboard & GIS:** Python `http.server` IPC bridge running on port 8080 with zero third-party framework dependencies.
 - [x] **Submission Report:** Formal 8-page SEA submission report rendered to `docs/Team 6_Campus RideShare & Carpool Matcher.pdf`.
 - [x] **Master Study Guide:** Complete 963-line engineering manual and defense guide at `docs/MASTER_STUDY_GUIDE.md`.
 - [x] **Vehicle Recognition Guide:** Description for visual recognition (make, model, color, GU parking tags) integrated across Ride Cards, Offer/Edit modals, Digital Pass QR, and Live GPS tracker.
+- [x] **Business Logic & Booking Guards:** Driver self-booking prevention, duplicate active reservation rejection, and past-date input guards.
+- [x] **Version Control:** Repository published to GitHub under `mohammed2664/GU-RideShare` on branch `main`.
 
 ---
 
@@ -34,6 +40,7 @@ The **GU Campus RideShare & Carpool Matcher** is fully built, compiled, and veri
 |  • HTML5 Semantic DOM  • Tailwind CSS Glassmorphism  • Vanilla ES6 State    |
 |  • Leaflet.js GIS Mapping (WGS-84)  • Dynamic SVG QR Transit Code Generator |
 |  • Live GPS Telemetry Kinematic Stepper  • Activity Notification Drawer     |
+|  • Vehicle Recognition Chips & Security Pass Verification                   |
 +======================================+======================================+
                                        | HTTP/1.1 REST (Port 8080)
                                        v
@@ -44,12 +51,13 @@ The **GU Campus RideShare & Carpool Matcher** is fully built, compiled, and veri
 |  • Subprocess Execution via Argument Vector: subprocess.Popen(argv)         |
 |  • Anonymous Pipe Stream Capture: stdout/stderr line-by-line reading        |
 |  • Pipe-Delimited text to JSON Serialization                                |
+|  • Business Guards: Driver self-booking & duplicate booking prevention      |
 +======================================+======================================+
                                        | OS Pipe IPC (CLI Flags & stdout)
                                        v
 +=============================================================================+
 |             TIER 3: CORE ALGORITHMIC ENGINE (Native C11 Machine Code)       |
-|  • Compiled via GCC: gcc -Wall -Wextra -std=c11 -O2                         |
+|  • Compiled via GCC: gcc -Wall -Wextra -std=c11 -O2 (0 warnings)            |
 |  • Zero dynamic runtime: Runs bare-metal on x86-64 CPU                      |
 |  • Dynamic Heap Memory Allocation: Initial pool + 2x geometric growth       |
 |  • In-Memory Contiguous Array Compaction (Heap Defragmentation)             |
@@ -105,7 +113,35 @@ The **GU Campus RideShare & Carpool Matcher** is fully built, compiled, and veri
 
 ---
 
-## 5. Execution Commands Quick Reference
+## 5. Detailed Session Change Ledger (22nd November 2026)
+
+### A. Feature Addition: Vehicle Recognition Description for Campus Gates
+- **Objective:** Enable students/passengers waiting at campus gates (Main Gate, Science/MCA Gate, Library Gate, etc.) to visually identify their vehicle in seconds without memorizing license plates.
+- **Data Layer:** `data/rides_meta.json` seeded with realistic campus vehicles (e.g. *Silver Hyundai i20 (White GU Pass #12)*, *White Maruti Swift (Red Roof & CS Dept Tag)*, *Dark Grey Activa 6G (Neon Helmet)*).
+- **Backend Bridge:** Added `DEFAULT_VEHICLE_DESCRIPTIONS` dictionary in `web/server.py`; updated `parse_rides()` to attach `vehicleDesc`; updated `/api/add-ride` and `/api/edit-ride` to accept and persist descriptions; updated `/api/search` to match keywords against vehicle descriptions.
+- **Frontend Presentation:** 
+  - Active ride cards display a dedicated vehicle recognition chip beneath plate numbers.
+  - "Offer a Ride" form and "Edit Ride" modal contain input fields for vehicle recognition description.
+  - Digital Boarding Pass modal and Live GPS Tracker modal display the visual vehicle guide under the registration number.
+
+### B. C11 Engine Zero-Warning Optimization
+- **Problem:** Compiling with `gcc -Wall -Wextra -std=c11 -O2` produced 3 warnings for implicit declaration of `strcasecmp` because standard ISO C11 requires `<strings.h>` for POSIX case-insensitive string comparison.
+- **Solution:** Added `#include <strings.h>` to `include/rideshare.h`. Compilation now completes with **absolute zero warnings**.
+
+### C. Booking Logic & Security Guards
+1. **Driver Self-Booking Prevention:** Added backend check in `web/server.py` (`/api/book`) rejecting reservations where the passenger is the driver; updated `populateBookingSelect()` in `web/app.js` to filter out driver's own rides from the dropdown.
+2. **Duplicate Reservation Prevention:** Added backend validation rejecting duplicate active `CONFIRMED` reservations by the same passenger on the same ride.
+3. **Unauthenticated UX Trigger:** When an unauthenticated visitor clicks "Reserve Seat" on a ride card, `applyCurrentUser()` automatically opens the Auth modal with 1-click team demo logins.
+4. **Date Validation:** `min` attribute on `#offer-date` and `#filter-date` dynamically locked to today's date to prevent past-date bookings.
+
+### D. GitHub Repository Setup
+- Local repository initialized, initial commit `a4dd797` created.
+- Remote linked to `https://github.com/mohammed2664/GU-RideShare.git`.
+- Collaborator permissions verified and branch `main` pushed to remote.
+
+---
+
+## 6. Execution Commands Quick Reference
 
 ### Rebuild and Run Automated Unit Tests:
 ```powershell
@@ -128,4 +164,11 @@ python web/server.py
 ### Run on Local Campus Wi-Fi for Mobile Phones:
 ```powershell
 scripts\start-mobile.bat
+```
+
+### Synchronize with GitHub:
+```powershell
+git add .
+git commit -m "Update session context"
+git push origin main
 ```
